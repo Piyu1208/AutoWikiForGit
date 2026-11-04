@@ -103,3 +103,18 @@ export async function search(repo, question, topK = DEFAULT_TOP_K) {
     .map(toSearchDocument)
     .filter((doc) => doc.pageContent.trim().length > 0);
 }
+
+// True if the repo's namespace already holds at least one chunk.
+export async function isIndexed(repo) {
+  const namespace = repoToNamespace(repo);
+  const index = getIndex(namespace);
+ 
+  const response = await index.documents.search({
+    topK: 1,
+    scoreBy: [{ type: "embed", fields: [TEXT_FIELD], query: "repository" }],
+    includeFields: ["path"],
+  });
+ 
+  const matches = response.matches ?? response.result?.hits ?? [];
+  return matches.length > 0;
+}
