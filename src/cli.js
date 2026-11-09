@@ -192,13 +192,16 @@ async function pickRepo(rl) {
 function printHelp() {
   console.log();
   console.log(indent(c.bold("Commands")));
-  console.log(indent(`${c.cyan("/new")}      switch to a different repo`));
+  console.log(indent(`${c.cyan("/new")}      switch to a different repo (clears history)`));
+  console.log(indent(`${c.cyan("/clear")}    clear conversation history`));
   console.log(indent(`${c.cyan("/reindex")}  re-index the current repo`));
   console.log(indent(`${c.cyan("/help")}     show this help`));
   console.log(indent(`${c.cyan("/exit")}     quit`));
 }
 
 // ---------- main ----------
+const MAX_HISTORY_MESSAGES = 10; // last 5 exchanges
+
 async function main() {
   const rl = readline.createInterface({ input, output });
   rl.on("close", () => {
@@ -208,6 +211,9 @@ async function main() {
 
   banner();
   let current = await pickRepo(rl);
+
+  // Conversation history lives here (client side) and is sent with every question.
+  let history = []; // [{ role: "user" | "assistant", content: string }]
 
   console.log();
   console.log(rule());
@@ -227,8 +233,14 @@ async function main() {
       printHelp();
       continue;
     }
+    if (line === "/clear") {
+      history = [];
+      ok("Conversation history cleared.");
+      continue;
+    }
     if (line === "/new") {
       current = await pickRepo(rl);
+      history = []; // a different repo means a fresh conversation
       console.log();
       info(`Now chatting about ${c.bold(current.repoKey)}.`);
       continue;
@@ -248,9 +260,14 @@ async function main() {
 
     const stop = startSpinner("Thinking");
     try {
-      const { answer, sources } = await askQuestion(current.repoKey, line);
+      const { answer, sources } = await askQuestion(current.repoKey, line, history);
       stop();
       printAgent(answer, sources);
+
+      // Only successful turns are remembered.
+      history.push({ role: "user", content: line });
+      history.push({ role: "assistant", content: answer });
+      history = history.slice(-MAX_HISTORY_MESSAGES);
     } catch (err) {
       stop();
       fail(`Something went wrong: ${err.message}`);
