@@ -6,6 +6,10 @@ GitWiki is a CLI-based Retrieval-Augmented Generation (RAG) application that let
 
 Instead of manually navigating files and searching through code, GitWiki retrieves relevant code snippets and uses an LLM to generate context-aware answers.
 
+## Demo
+
+![GitWiki CLI Demo](./assets/gitwiki-demo.png)
+
 ## Features
 
 - **Repository Indexing:** Fetches repository files directly from GitHub using the GitHub API.
@@ -275,6 +279,7 @@ GitWiki/
 ├── package.json
 └── README.md
 ```
+
 
 
 
